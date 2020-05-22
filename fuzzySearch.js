@@ -1,6 +1,6 @@
 const levenshtein = require('./levenshtein');
 
-module.exports = function fuzzySearch(search, items, threshold, partial) {
+module.exports = function fuzzySearch(search, items, partial) {
   if (!search) {
     return [];
   }
@@ -10,15 +10,17 @@ module.exports = function fuzzySearch(search, items, threshold, partial) {
 
   const term = search.toLowerCase();
   const words = items.map((item) => item.toString().toLowerCase());
-  return words.filter((word) => test(word, term, threshold, partial));
+  return words.filter((word) => test(word, term, partial));
 }
 
 
-function test(word, term, threshold, partial) {
+function test(word, term, partial) {
   // if partial matching
   if (partial && word.includes(term)) {
     return true;
   }
+
+  const threshold = Math.ceil(term.length / 8); // arbitrarily we'll allow one error per 8 characters
 
   // do regular fuzzy match
   if (Math.abs(word.length - term.length) <= threshold) {
