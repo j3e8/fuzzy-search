@@ -17,7 +17,7 @@ function loadWordList() {
 function main(term) {
   const words = loadWordList();
   const start = Date.now();
-  const results = fuzzySearch(term, words, false);
+  const results = fuzzySearch(term, words, { partial: false, soundex: false });
   const end = Date.now();
   console.log(results);
   console.log(`${end - start}ms`);
