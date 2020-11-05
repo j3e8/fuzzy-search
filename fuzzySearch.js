@@ -11,13 +11,26 @@ module.exports = function fuzzySearch(search, items, options = {}) {
 
   const term = search.toLowerCase();
   const words = items.map((item) => item.toString().toLowerCase());
-  return words.filter((word) => test(word, term, options));
+  const results = words.map((word) => test(word, term, options)).filter(r => r.match);
+
+  results.sort((a, b) => {
+    if (a.score === undefined || b.score === undefined) {
+      return 0;
+    }
+    return a.score - b.score;
+  });
+
+  return results.map(res => res.word);
 }
 
 function test(word, term, options) {
   // if partial matching
   if (options.partial && word.includes(term)) {
-    return true;
+    return {
+      match: true,
+      score: 1,
+      word,
+    };
   }
 
   if (options.soundex) {
@@ -26,17 +39,21 @@ function test(word, term, options) {
     return levenshteinTest(word, term, options);
   }
 
-  return false;
+  return { match: false, word };
 }
 
 function levenshteinTest(word, term, options) {
-  const threshold = Math.ceil(term.length / 8); // arbitrarily we'll allow one error per 8 characters
+  const threshold = Math.ceil(term.length / 4); // arbitrarily we'll allow one error per 4 characters
 
   // do regular fuzzy match
   if (Math.abs(word.length - term.length) <= threshold) {
     const d = levenshtein(word, term);
     if (d <= threshold) {
-      return true;
+      return {
+        match: true,
+        score: d,
+        word,
+      };
     }
   }
 
@@ -45,11 +62,15 @@ function levenshteinTest(word, term, options) {
     const subword = word.substring(word.indexOf(term[0]));
     const d = levenshtein(subword, term);
     if (d <= threshold) {
-      return true;
+      return {
+        match: true,
+        score: d,
+        word,
+      };
     }
   }
 
-  return false;
+  return { match: false, word };
 }
 
 function soundexTest(word, term, options) {
@@ -57,8 +78,14 @@ function soundexTest(word, term, options) {
     const longer = word.length > term.length ? word : term;
     const shorter = word === longer ? term : word;
 
-    return soundex(longer, true).includes(soundex(shorter, true));
+    return {
+      match: soundex(longer, true).includes(soundex(shorter, true)),
+      word,
+    };
   } else {
-    return soundex(word) === soundex(term);
+    return {
+      match: soundex(word) === soundex(term),
+      word,
+    };
   }
 }

@@ -19,6 +19,12 @@ function main(term) {
   const start = Date.now();
   const results = fuzzySearch(term, words, { partial: false, soundex: false });
   const end = Date.now();
+
+  const exactMatchIndex = results.findIndex(result => result.toLowerCase() === term.toLowerCase());
+  const exactMatch = results[exactMatchIndex];
+  results.splice(exactMatchIndex, 1);
+  results.unshift(exactMatch);
+
   console.log(results);
   console.log(`${end - start}ms`);
 }
